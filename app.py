@@ -5,21 +5,43 @@ from flask import Flask, render_template, request, redirect, url_for, session
 from flask_mysqldb import MySQL
 import MySQLdb.cursors
 import re
- 
-
+from flask_wtf import FlaskForm 
+from wtforms import StringField, validators, PasswordField, SubmitField 
+from wtforms.validators import DataRequired, Email 
+import email_validator 
+from flask_bootstrap import Bootstrap
 
 app = Flask(__name__)
- 
- 
-app.secret_key = 'your secret key'
- 
+Bootstrap(app)
+
+# un secret key a definir, aide entre autre a se proteger contre les CRSF
+app.secret_key = "secret-string-is-the-best-even-if-it-has-aucun-sens"
+
+# info de la database
 app.config['MYSQL_HOST'] = 'localhost'
 app.config['MYSQL_USER'] = 'root'
 app.config['MYSQL_PASSWORD'] = 'root'
 app.config['MYSQL_DB'] = 'mysql'
  
 mysql = MySQL(app)
- 
+
+# Partie pour le contact us
+class contactForm(FlaskForm):
+    name = StringField(label='Name', validators=[DataRequired()])
+    email = StringField(
+        label='Email', validators=[DataRequired(), Email(granular_message=True)])
+    message = StringField(label='Message')
+    submit = SubmitField(label="Log In")
+
+
+@app.route("/", methods=["GET", "POST"])
+def home():
+    cform = contactForm()
+    if cform.validate_on_submit():
+        print(f"Name:{cform.name.data}, E-mail:{cform.email.data}, message: {cform.message.data}")
+    return render_template("contact.html", form=cform)
+
+# Partie pour le login
 @app.route('/')
 @app.route('/login', methods =['GET', 'POST'])
 def login():
@@ -73,3 +95,5 @@ def register():
         msg = 'Please fill out the form !'
     return render_template('register.html', msg = msg)
 
+if __name__ == '__main__':
+    app.run(debug=True)
